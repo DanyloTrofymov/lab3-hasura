@@ -1,0 +1,40 @@
+{
+  "name": "todolist",
+  "version": "1.0.0",
+  "description": "smth",
+  "main": "index.js",
+  "scripts": {
+    "eslint:fix": "eslint . --fix --ignore-path .gitignore",
+    "eslint:check": "eslint . --ignore-path .gitignore",
+    "format:fix": "prettier --write . --ignore-path .gitignore --ignore-path .prettierignore",
+    "format:check": "prettier --check . --ignore-path .gitignore  --ignore-path .prettierignore",
+    "stylelint:fix": "stylelint \"**/*.css\" --fix --ignore-path .gitignore",
+    "stylelint:check": "stylelint \"**/*.css\" --ignore-path .gitignore"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanyloTrofymov/lab3-hasura.git"
+  },
+  "keywords": [
+    "hasura",
+    "heroku",
+    "todolist",
+    "todo",
+    "nodejs"
+  ],
+  "author": "Danulo Trofymov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DanyloTrofymov/lab3-hasura/issues"
+  },
+  "homepage": "https://github.com/DanyloTrofymov/lab3-hasura#readme",
+  "devDependencies": {
+    "eslint": "^8.2.0",
+    "eslint-config-metarhia": "^7.0.1",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-sonarjs": "^0.10.0",
+    "prettier": "2.4.1",
+    "stylelint": "^14.1.0",
+    "stylelint-config-standard": "^24.0.0"
+  }
+}
