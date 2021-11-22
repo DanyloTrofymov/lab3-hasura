@@ -1,21 +1,8 @@
-import { gql } from "@apollo/client";
-
 export class Operations {
-    static QUERY_GetAll = () =>
-        `
-  query MyQuery {
-    todo_pinkpanther(order_by: {id: asc}) {
-      id
-      deadline
-      done
-      noteBody
-      noteTitle
-    }
-  }
-`;
-    static MUTATUION_Insert = (title, body, deadline) => `
+  static mutationInsert = (title, body, deadline) => `
   mutation MyMutation($deadline: timestamptz = "") {
-    insert_todo_pinkpanther(objects: {noteBody: "${body}", noteTitle: "${title}", done: false, deadline: "${deadline}"}) {
+    insert_todo_pinkpanther(objects: {noteBody: "${body}",
+     noteTitle: "${title}", done: false, deadline: "${deadline}"}) {
       returning {
         id
         noteBody
@@ -26,10 +13,9 @@ export class Operations {
     }
   }
 `;
-    static MUTATUION_Delete = (id) => `
+  static mutationDelete = id => `
  mutation MyMutation {
    delete_todo_pinkpanther_by_pk(id: ${id})
- }  
+ }
 `;
-    //static SUBSCTIPTION_AllTodos = ;
 }
