@@ -1,3 +1,5 @@
+import { gql } from "@apollo/client";
+
 export class Operations {
     static QUERY_GetAll = () =>
         `
@@ -27,6 +29,7 @@ export class Operations {
     static MUTATUION_Delete = (id) => `
  mutation MyMutation {
    delete_todo_pinkpanther_by_pk(id: ${id})
- }
+ }  
 `;
+    //static SUBSCTIPTION_AllTodos = ;
 }
