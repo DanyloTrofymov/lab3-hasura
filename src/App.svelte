@@ -1,57 +1,67 @@
 <script>
-import request from './helper/request';
-import {Operations} from './helper/operations';
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
-import { setClient } from "svelte-apollo";
-import { WebSocketLink } from "@apollo/client/link/ws";
-import { subscribe, mutation } from "svelte-apollo";
-import { gql } from "@apollo/client";
+  import request from './helper/request';
+  import { Operations } from './helper/operations';
+  import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+  import { setClient } from 'svelte-apollo';
+  import { WebSocketLink } from '@apollo/client/link/ws';
+  import { subscribe, mutation } from 'svelte-apollo';
+  import { gql } from '@apollo/client';
 
-function createApolloClient() {
-const wslink = new WebSocketLink({
-  uri: "wss://todoweblabs.herokuapp.com/v1/graphql",
-	options: {
-		reconnect: true,
-	},
-});
+  let titleValue = '';
+  let bodyValue = '';
+  let dateValue = '';
 
-const cache = new InMemoryCache();
+  function createApolloClient() {
+    const wslink = new WebSocketLink({
+      uri: 'wss://todoweblabs.herokuapp.com/v1/graphql',
+      options: {
+        reconnect: true,
+      },
+    });
 
-const client = new ApolloClient({
-  link: wslink,
-  cache,
-});
-return client;
-}
+    const cache = new InMemoryCache();
 
-const client = createApolloClient();
-setClient(client);
+    const client = new ApolloClient({
+      link: wslink,
+      cache,
+    });
+    return client;
+  }
 
-const Tasks = subscribe(gql`
-        subscription MySubscription {
-            todo_pinkpanther {
-                deadline
-                done
-                id
-                noteBody
-                noteTitle
-            }
-        }
-    `);
+  const client = createApolloClient();
+  setClient(client);
 
-	const addTask = async () => {
-		const title = prompt("Task title: ")
-		const body = prompt("Task body: ")
-		const deadline = prompt("Task deadline: ")
-		if(title == "") return;
-		await request.startExecuteMyMutation(Operations.mutationInsert(title, body, deadline));
-	}
+  const Tasks = subscribe(gql`
+    subscription MySubscription {
+      todo_pinkpanther(order_by: { id: asc }) {
+        deadline
+        done
+        id
+        noteBody
+        noteTitle
+      }
+    }
+  `);
 
-	const deleteTask = async () => {
-		const id = prompt("Task id: ")
-		await request.startExecuteMyMutation(Operations.mutationDelete(id));
+  const addTask = async () => {
+    if (titleValue == '') {
+      alert('Title can`t be empty!');
+      return;
+    }
+    await request.startExecuteMyMutation(
+      Operations.mutationInsert(titleValue, bodyValue, dateValue),
+    );
+  };
 
-	}
+  const deleteTask = async (id) => {
+    await request.startExecuteMyMutation(Operations.mutationDelete(id));
+  };
+
+  const updateChecked = async (id, checked) => {
+    await request.startExecuteMyMutation(
+      Operations.mutationChecked(id, checked),
+    );
+  };
 </script>
 
 <main>
@@ -61,24 +71,53 @@ const Tasks = subscribe(gql`
   {:else if $Tasks.error}
     <h1>error</h1>
   {:else if $Tasks.data}
+    <form class="form" on:submit|preventDefault={addTask}>
+      <div class="form__section">
+        <input
+          type="text"
+          name="Title"
+          placeholder="Title"
+          on:input={(event) => (titleValue = event.target.value)}
+        />
+        <input
+          type="text"
+          body="body"
+          placeholder="body"
+          on:input={(event) => (bodyValue = event.target.value)}
+        />
+        <input
+          type="date"
+          body="date"
+          placeholder="date"
+          on:input={(event) => (dateValue = event.target.value)}
+        />
+      </div>
+    </form>
     <button on:click={addTask}>Add task</button>
-    <button on:click={deleteTask}>Delete task</button>
     <table border="1">
       <caption>ToDo</caption>
       <tr>
-        <th>id</th>
+        <th>Done</th>
+        <th>Id</th>
         <th>Title</th>
         <th>Body</th>
         <th>Deadline</th>
-        <th>Done</th>
+        <th>Delete</th>
       </tr>
       {#each $Tasks.data.todo_pinkpanther as task (task.id)}
         <tr>
+          <td
+            ><input
+              type="checkbox"
+              checked={task.done}
+              on:click={() => updateChecked(task.id, !task.done)}
+            /></td
+          >
           <td>{task.id}</td>
           <td>{task.noteTitle}</td>
           <td>{task.noteBody}</td>
           <td>{task.deadline}</td>
-          <td>{task.done}</td>
+          <td><button on:click={() => deleteTask(task.id)}>Delete</button></td>
         </tr>
       {/each}
     </table>
