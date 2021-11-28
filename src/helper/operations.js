@@ -16,7 +16,7 @@ export class Operations {
   static mutationInsertWithoutDeadline = (title, body) => `
 mutation MyMutation($deadline: timestamptz = "") {
   insert_todo_pinkpanther(objects:
-    g{noteBody: "${body}", noteTitle: "${title}", done: false}) {
+    {noteBody: "${body}", noteTitle: "${title}", done: false}) {
     returning {
       id
       noteBody
