@@ -148,12 +148,11 @@
   main {
     margin: 0;
     max-width: 100%;
-    height: 100%;
     background-color: var(--background-color);
   }
   .form {
     background-color: var(--form-background-color);
-    border-radius: 5px;
+    border-radius: 3px;
     padding: 20px;
     width: 700px;
     margin: auto;
@@ -179,11 +178,13 @@
   table {
     border-collapse: collapse;
     margin: auto;
-    position: absolute;
-    width: 99%;
+    width: 90%;
     border-left: 3px solid var(--table-color);
     border-right: 3px solid var(--table-color);
     border-bottom: 3px solid var(--table-color);
+  }
+  button {
+    cursor: pointer;
   }
   caption {
     background: var(--table-color);
