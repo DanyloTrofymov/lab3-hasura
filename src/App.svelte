@@ -7,9 +7,12 @@
   import { subscribe, mutation } from 'svelte-apollo';
   import { gql } from '@apollo/client';
 
+  let modalText = '';
+  let modalEnabled = false;
   let titleValue = '';
   let bodyValue = '';
   let deadlineValue = '';
+  let loaderEnabled = false;
 
   function createApolloClient() {
     const wslink = new WebSocketLink({
@@ -44,94 +47,132 @@
   `);
 
   const addTask = async () => {
+    loaderEnabled = true;
     if (titleValue == '') {
-      alert('Title can`t be empty!');
+      openModal('Title can not be empty!');
+      loaderEnabled = false;
       return;
     }
     if (deadlineValue == '') {
-      await request.startExecuteMyMutation(
-        Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
-      );
-      return;
+      await request
+        .startExecuteMyMutation(
+          Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
+        )
+        .catch(openModal('Request error!'));
+    } else {
+      await request
+        .startExecuteMyMutation(
+          Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
+        )
+        .catch(openModal('Request error!'));
     }
-    await request.startExecuteMyMutation(
-      Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
-    );
+    loaderEnabled = false;
   };
 
   const deleteTask = async (id) => {
-    await request.startExecuteMyMutation(Operations.mutationDelete(id));
+    loaderEnabled = true;
+    await request
+      .startExecuteMyMutation(Operations.mutationDelete(id))
+      .catch(openModal('Request error!'));
+    loaderEnabled = false;
   };
 
   const updateChecked = async (id, checked) => {
-    await request.startExecuteMyMutation(
-      Operations.mutationChecked(id, checked),
-    );
+    loaderEnabled = true;
+    await request
+      .startExecuteMyMutation(Operations.mutationChecked(id, checked))
+      .catch(() => {
+        openModal('Request error!');
+      });
+    loaderEnabled = false;
+  };
+  const openModal = (text) => {
+    modalText = text;
+  };
+
+  const closeModal = () => {
+    modalText = '';
   };
 </script>
 
 <main>
-  <!--{JSON.stringify($Tasks)}!-->
-  {#if $Tasks.loading}
-    <div class="loader" />
-  {:else if $Tasks.error}
-    <h1 class="message">error</h1>
-  {:else if $Tasks.data}
-    <form class="form" on:submit|preventDefault={addTask}>
-      <div class="form__section">
-        <input
-          type="text"
-          name="Title"
-          placeholder="Title"
-          on:input={(event) => (titleValue = event.target.value)}
-        />
-        <input
-          type="text"
-          body="body"
-          placeholder="body"
-          on:input={(event) => (bodyValue = event.target.value)}
-        />
-        <input
-          type="date"
-          body="deadline"
-          placeholder="deadline"
-          on:input={(event) => (deadlineValue = event.target.value)}
-        />
-      </div>
-      <button>Add task</button>
-    </form>
-    <table border="1">
-      <caption>ToDo</caption>
-      <tr>
-        <th>Done</th>
-        <th>Id</th>
-        <th>Title</th>
-        <th>Body</th>
-        <th>Deadline</th>
-        <th>Delete</th>
-      </tr>
-      {#each $Tasks.data.todo_pinkpanther as task (task.id)}
+  <div>
+    <!--{JSON.stringify($Tasks)}!-->
+    {#if $Tasks.loading}
+      <div class="loader" />
+    {:else if $Tasks.error}
+      <h1 class="message">error</h1>
+    {:else if $Tasks.data}
+      {#if loaderEnabled}
+        <div class="loader" />
+      {/if}
+      {#if modalText}
+        <div class="modal-container">
+          <div class="modal">
+            <h1>Error</h1>
+            <p>{modalText}</p>
+            <button class="modal_button" id="close" on:click={closeModal}>
+              Close
+            </button>
+          </div>
+        </div>
+      {/if}
+      <form class="form" on:submit|preventDefault={addTask}>
+        <div class="form__section">
+          <input
+            type="text"
+            name="Title"
+            placeholder="Title"
+            on:input={(event) => (titleValue = event.target.value)}
+          />
+          <input
+            type="text"
+            body="body"
+            placeholder="body"
+            on:input={(event) => (bodyValue = event.target.value)}
+          />
+          <input
+            type="date"
+            body="deadline"
+            placeholder="deadline"
+            on:input={(event) => (deadlineValue = event.target.value)}
+          />
+        </div>
+        <button>Add task</button>
+      </form>
+      <table border="1">
+        <caption>ToDo</caption>
         <tr>
-          <td
-            ><input
-              type="checkbox"
-              checked={task.done}
-              on:click={() => updateChecked(task.id, !task.done)}
-            /></td
-          >
-          <td>{task.id}</td>
-          <td>{task.noteTitle}</td>
-          <td>{task.noteBody}</td>
-          <td>{task.deadline}</td>
-          <td
-            ><button class="delete" on:click={() => deleteTask(task.id)}
-              >Delete</button
-            ></td
-          >
+          <th>Done</th>
+          <th>Id</th>
+          <th>Title</th>
+          <th>Body</th>
+          <th>Deadline</th>
+          <th>Delete</th>
         </tr>
-      {/each}
-    </table>
-  {/if}
+        {#each $Tasks.data.todo_pinkpanther as task (task.id)}
+          <tr>
+            <td
+              ><input
+                type="checkbox"
+                checked={task.done}
+                on:click={() => updateChecked(task.id, !task.done)}
+              /></td
+            >
+            <td>{task.id}</td>
+            <td>{task.noteTitle}</td>
+            <td>{task.noteBody}</td>
+            <td>{task.deadline}</td>
+            <td
+              ><button class="delete" on:click={() => deleteTask(task.id)}
+                >Delete</button
+              ></td
+            >
+          </tr>
+        {/each}
+      </table>
+    {/if}
+  </div>
 </main>
 
 <style>
@@ -148,7 +189,6 @@
   main {
     margin: 0;
     max-width: 100%;
-    background-color: var(--background-color);
   }
   .form {
     background-color: var(--form-background-color);
@@ -186,6 +226,40 @@
   button {
     cursor: pointer;
   }
+
+  .modal-container {
+    background: rgba(0, 0, 0, 0.3);
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    z-index: 1;
+  }
+
+  .modal {
+    background-color: var(--light-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 600px;
+    border-radius: 5px;
+    padding: 30px 50px;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .modal h1 {
+    font-size: 20px;
+    margin: 0;
+  }
+  .modal p {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
   caption {
     background: var(--table-color);
     border-top-left-radius: 3px;
@@ -231,13 +305,14 @@
   }
 
   .loader {
-    position: absolute;
-    top: 40%;
+    position: fixed;
+    top: 50%;
     left: 50%;
     width: 80px;
     height: 80px;
   }
   .loader:after {
+    background: rgba(0, 0, 0, 0.7);
     content: ' ';
     display: block;
     width: 64px;
