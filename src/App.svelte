@@ -8,7 +8,6 @@
   import { gql } from '@apollo/client';
 
   let modalText = '';
-  let modalEnabled = false;
   let titleValue = '';
   let bodyValue = '';
   let deadlineValue = '';
@@ -48,42 +47,34 @@
 
   const addTask = async () => {
     loaderEnabled = true;
-    if (titleValue == '') {
+    if (!titleValue) {
       openModal('Title can not be empty!');
       loaderEnabled = false;
       return;
     }
-    if (deadlineValue == '') {
-      await request
-        .startExecuteMyMutation(
-          Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
-        )
-        .catch(openModal('Request error!'));
+    if (!deadlineValue) {
+      await request.startExecuteMyMutation(
+        Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
+      );
     } else {
-      await request
-        .startExecuteMyMutation(
-          Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
-        )
-        .catch(openModal('Request error!'));
+      await request.startExecuteMyMutation(
+        Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
+      );
     }
     loaderEnabled = false;
   };
 
   const deleteTask = async (id) => {
     loaderEnabled = true;
-    await request
-      .startExecuteMyMutation(Operations.mutationDelete(id))
-      .catch(openModal('Request error!'));
+    await request.startExecuteMyMutation(Operations.mutationDelete(id));
     loaderEnabled = false;
   };
 
   const updateChecked = async (id, checked) => {
     loaderEnabled = true;
-    await request
-      .startExecuteMyMutation(Operations.mutationChecked(id, checked))
-      .catch(() => {
-        openModal('Request error!');
-      });
+    await request.startExecuteMyMutation(
+      Operations.mutationChecked(id, checked),
+    );
     loaderEnabled = false;
   };
   const openModal = (text) => {
@@ -92,6 +83,10 @@
 
   const closeModal = () => {
     modalText = '';
+  };
+
+  window.onoffline = () => {
+    openModal('You are currently offline!');
   };
 </script>
 
@@ -123,19 +118,19 @@
             type="text"
             name="Title"
             placeholder="Title"
-            on:input={(event) => (titleValue = event.target.value)}
+            bind:value={titleValue}
           />
           <input
             type="text"
             body="body"
             placeholder="body"
-            on:input={(event) => (bodyValue = event.target.value)}
+            bind:value={bodyValue}
           />
           <input
             type="date"
             body="deadline"
             placeholder="deadline"
-            on:input={(event) => (deadlineValue = event.target.value)}
+            bind:value={deadlineValue}
           />
         </div>
         <button>Add task</button>
@@ -320,8 +315,7 @@
     margin: 8px;
     border-radius: 50%;
     border: 6px solid;
-    border-color: var(--button-hover-color) transparent
-      var(--button-hover-color) transparent;
+    border-color: var(--button-hover-color) transparent;
     animation: loader 1.2s linear infinite;
   }
   @keyframes loader {
