@@ -53,28 +53,34 @@
       return;
     }
     if (!deadlineValue) {
-      await request.startExecuteMyMutation(
-        Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
-      );
+      await request
+        .startExecuteMyMutation(
+          Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
+        )
+        .catch(() => openModal('Unexpexted request error!'));
     } else {
-      await request.startExecuteMyMutation(
-        Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
-      );
+      await request
+        .startExecuteMyMutation(
+          Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
+        )
+        .catch(() => openModal('Unexpexted request error!'));
     }
     loaderEnabled = false;
   };
 
   const deleteTask = async (id) => {
     loaderEnabled = true;
-    await request.startExecuteMyMutation(Operations.mutationDelete(id));
+    await request
+      .startExecuteMyMutation(Operations.mutationDelete(id))
+      .catch(() => openModal('Unexpexted request error!'));
     loaderEnabled = false;
   };
 
   const updateChecked = async (id, checked) => {
     loaderEnabled = true;
-    await request.startExecuteMyMutation(
-      Operations.mutationChecked(id, checked),
-    );
+    await request
+      .startExecuteMyMutation(Operations.mutationChecked(id, checked))
+      .catch(() => openModal('Unexpexted request error!'));
     loaderEnabled = false;
   };
   const openModal = (text) => {
@@ -92,7 +98,6 @@
 
 <main>
   <div>
-    <!--{JSON.stringify($Tasks)}!-->
     {#if $Tasks.loading}
       <div class="loader" />
     {:else if $Tasks.error}
