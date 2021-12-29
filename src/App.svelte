@@ -57,13 +57,13 @@
         .startExecuteMyMutation(
           Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
         )
-        .catch(() => openModal('Unexpexted request error!'));
+        .catch((e) => openModal(e), (loaderEnabled = false));
     } else {
       await request
         .startExecuteMyMutation(
           Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
         )
-        .catch(() => openModal('Unexpexted request error!'));
+        .catch((e) => openModal(e), (loaderEnabled = false));
     }
     loaderEnabled = false;
   };
@@ -72,7 +72,7 @@
     loaderEnabled = true;
     await request
       .startExecuteMyMutation(Operations.mutationDelete(id))
-      .catch(() => openModal('Unexpexted request error!'));
+      .catch((e) => openModal(e), (loaderEnabled = false));
     loaderEnabled = false;
   };
 
@@ -80,7 +80,7 @@
     loaderEnabled = true;
     await request
       .startExecuteMyMutation(Operations.mutationChecked(id, checked))
-      .catch(() => openModal('Unexpexted request error!'));
+      .catch((e) => openModal(e), (loaderEnabled = false));
     loaderEnabled = false;
   };
   const openModal = (text) => {
