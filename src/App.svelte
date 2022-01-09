@@ -44,6 +44,14 @@
       }
     }
   `);
+  const getTodaysDate = () => {
+    let today = new Date();
+    today.setHours(0);
+    today.setMinutes(0);
+    today.setSeconds(0);
+    today.setMilliseconds(0);
+    return today;
+  };
 
   const addTask = async () => {
     loaderEnabled = true;
@@ -59,6 +67,11 @@
         )
         .catch((e) => openModal(e), (loaderEnabled = false));
     } else {
+      if (new Date(deadlineValue) < getTodaysDate()) {
+        openModal('Deadline can not be earlier than today');
+        loaderEnabled = false;
+        return;
+      }
       await request
         .startExecuteMyMutation(
           Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
@@ -140,37 +153,44 @@
         </div>
         <button>Add task</button>
       </form>
-      <table border="1">
-        <caption>ToDo</caption>
-        <tr>
-          <th>Done</th>
-          <th>Id</th>
-          <th>Title</th>
-          <th>Body</th>
-          <th>Deadline</th>
-          <th>Delete</th>
-        </tr>
-        {#each $Tasks.data.todo_pinkpanther as task (task.id)}
+      {#if $Tasks.data.todo_pinkpanther.length != 0}
+        <table border="1">
+          <caption>ToDo</caption>
           <tr>
-            <td
-              ><input
-                type="checkbox"
-                checked={task.done}
-                on:click={() => updateChecked(task.id, !task.done)}
-              /></td
-            >
-            <td>{task.id}</td>
-            <td>{task.noteTitle}</td>
-            <td>{task.noteBody}</td>
-            <td>{task.deadline}</td>
-            <td
-              ><button class="delete" on:click={() => deleteTask(task.id)}
-                >Delete</button
-              ></td
-            >
+            <th>Done</th>
+            <th>Id</th>
+            <th>Title</th>
+            <th>Body</th>
+            <th>Deadline</th>
+            <th>Delete</th>
           </tr>
-        {/each}
-      </table>
+          {#each $Tasks.data.todo_pinkpanther as task (task.id)}
+            <tr>
+              <td
+                ><input
+                  type="checkbox"
+                  checked={task.done}
+                  on:click={() => updateChecked(task.id, !task.done)}
+                /></td
+              >
+              <td>{task.id}</td>
+              <td>{task.noteTitle}</td>
+              <td>{task.noteBody}</td>
+              <td>{task.deadline}</td>
+              <td
+                ><button
+                  class="delete"
+                  on:click={() => {
+                    deleteTask(task.id), (loaderEnabled = true);
+                  }}>Delete</button
+                ></td
+              >
+            </tr>
+          {/each}
+        </table>
+      {:else}
+        <h1 class="message">You can add some todos using form above</h1>
+      {/if}
     {/if}
   </div>
 </main>
@@ -209,10 +229,15 @@
     border-radius: 3px;
     padding: 10px;
   }
+  .form button:hover {
+    background-color: var(--button-hover);
+  }
+
   .message {
     position: absolute;
     top: 40%;
     left: 50%;
+    transform: translateX(-50%);
   }
 
   table {
@@ -310,6 +335,7 @@
     left: 50%;
     width: 80px;
     height: 80px;
+    z-index: 2;
   }
   .loader:after {
     background: rgba(0, 0, 0, 0.7);
