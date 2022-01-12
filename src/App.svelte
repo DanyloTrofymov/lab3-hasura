@@ -1,22 +1,21 @@
 <script>
-  import request from './helper/request';
-  import { Operations } from './helper/operations';
   import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
   import { setClient } from 'svelte-apollo';
   import { WebSocketLink } from '@apollo/client/link/ws';
   import { subscribe, mutation } from 'svelte-apollo';
   import { gql } from '@apollo/client';
-  import { modalText } from './store';
+  import { errorArr, loader } from './store';
+  import { Fetches } from './helper/api';
 
   let titleValue = '';
   let bodyValue = '';
   let deadlineValue = '';
-  let loaderEnabled = false;
+  let modalText = '';
   let offline = false;
 
   function createApolloClient() {
     const wslink = new WebSocketLink({
-      uri: domainenv,
+      uri: 'wss://' + domainenv, // eslint-disable-line
       options: {
         reconnect: true,
       },
@@ -45,71 +44,39 @@
       }
     }
   `);
-  const getTodaysDate = () => {
-    let today = new Date();
-    today.setHours(0);
-    today.setMinutes(0);
-    today.setSeconds(0);
-    today.setMilliseconds(0);
-    return today;
+
+  const addTask = () => {
+    console.log(errorArr.length);
+    Fetches.addTask(titleValue, bodyValue, deadlineValue);
+    openModal();
+  };
+  const deleteTask = (id) => {
+    Fetches.deleteTask(id);
+    openModal();
+  };
+  const updateChecked = (id, checked) => {
+    Fetches.updateChecked(id, checked);
+    openModal();
   };
 
-  const addTask = async () => {
-    loaderEnabled = true;
-    if (!titleValue) {
-      openModal('Title can not be empty!');
-      loaderEnabled = false;
-      return;
+  const openModal = () => {
+    if ($errorArr.length != 0) {
+      modalText = $errorArr.pop();
     }
-    try {
-      if (!deadlineValue) {
-        await request.startExecuteMyMutation(
-          Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
-        );
-      } else {
-        if (new Date(deadlineValue) < getTodaysDate()) {
-          openModal('Deadline can not be earlier than today');
-          loaderEnabled = false;
-          return;
-        }
-        await request.startExecuteMyMutation(
-          Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
-        );
-      }
-      loaderEnabled = false;
-    } catch (e) {
-      openModal(e);
-      loaderEnabled = false;
-    }
-  };
-
-  const deleteTask = async (id) => {
-    loaderEnabled = true;
-    await request
-      .startExecuteMyMutation(Operations.mutationDelete(id))
-      .catch((e) => openModal(e), (loaderEnabled = false));
-    loaderEnabled = false;
-  };
-
-  const updateChecked = async (id, checked) => {
-    loaderEnabled = true;
-    await request
-      .startExecuteMyMutation(Operations.mutationChecked(id, checked))
-      .catch((e) => openModal(e), (loaderEnabled = false));
-    loaderEnabled = false;
-  };
-
-  const openModal = (text) => {
-    modalText.set(text);
   };
 
   const closeModal = () => {
-    modalText.set('');
+    if ($errorArr.length != 0) {
+      modalText = $errorArr.pop();
+    } else {
+      modalText = '';
+    }
   };
 
   window.onoffline = () => {
     offline = true;
-    openModal('You are currently offline!');
+    $errorArr.push('You are currently offline!');
+    openModal();
   };
   window.ononline = () => {
     offline = false;
@@ -118,6 +85,17 @@
 
 <main>
   <div>
+    {#if modalText}
+      <div class="modal-container">
+        <div class="modal">
+          <h1>Error</h1>
+          <p>{modalText}</p>
+          <button class="modal_button" id="close" on:click={closeModal}>
+            Close
+          </button>
+        </div>
+      </div>
+    {/if}
     {#if $Tasks.loading}
       <div class="loader" />
     {:else if $Tasks.error}
@@ -125,19 +103,8 @@
     {:else if offline}
       <h1 class="message">Check your internet connection</h1>
     {:else if $Tasks.data}
-      {#if loaderEnabled}
+      {#if $loader != 0}
         <div class="loader" />
-      {/if}
-      {#if $modalText}
-        <div class="modal-container">
-          <div class="modal">
-            <h1>Error</h1>
-            <p>{$modalText}</p>
-            <button class="modal_button" id="close" on:click={closeModal}>
-              Close
-            </button>
-          </div>
-        </div>
       {/if}
       <form class="form" on:submit|preventDefault={addTask}>
         <div class="form__section">
@@ -187,11 +154,8 @@
               <td>{task.noteBody}</td>
               <td>{task.deadline}</td>
               <td
-                ><button
-                  class="delete"
-                  on:click={() => {
-                    deleteTask(task.id), (loaderEnabled = true);
-                  }}>Delete</button
+                ><button class="delete" on:click={() => deleteTask(task.id)}
+                  >Delete</button
                 ></td
               >
             </tr>

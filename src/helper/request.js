@@ -1,23 +1,21 @@
-import { modalText } from '../store';
+import { errorArr } from '../store';
 
 class Request {
   // eslint-disable-next-line
   async fetchGraphQL(operationsDoc, operationName, variables) {
     try {
-      const result = await fetch(
-        'https://todoweblabs.herokuapp.com/v1/graphql',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            query: operationsDoc,
-            variables,
-            operationName,
-          }),
-        },
-      );
+      // eslint-disable-next-line
+      const result = await fetch('https://' + domainenv, {
+        method: 'POST',
+        body: JSON.stringify({
+          query: operationsDoc,
+          variables,
+          operationName,
+        }),
+      });
       return await result.json(); // eslint-disable-line
     } catch (e) {
-      modalText.set(e.message);
+      errorArr.update((n) => [...n, e.message]);
     }
   }
   fetchMyQuery(operationsDoc) {
@@ -29,12 +27,13 @@ class Request {
 
     if (errors) {
       console.error(errors);
-      throw new Error(errors[0].message);
+      throw new Error(errors.message.join('\n'));
     }
 
     console.log(data);
     return data;
   }
+
   executeMyMutation(operationsDoc) {
     return this.fetchGraphQL(operationsDoc, 'MyMutation', {});
   }
@@ -44,7 +43,7 @@ class Request {
 
     if (errors) {
       console.error(errors);
-      throw new Error(errors[0].message);
+      throw new Error(errors.message.join('\n'));
     }
     console.log(data);
     return data;
