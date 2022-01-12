@@ -6,16 +6,17 @@
   import { WebSocketLink } from '@apollo/client/link/ws';
   import { subscribe, mutation } from 'svelte-apollo';
   import { gql } from '@apollo/client';
+  import { modalText } from './store';
 
-  let modalText = '';
   let titleValue = '';
   let bodyValue = '';
   let deadlineValue = '';
   let loaderEnabled = false;
+  let offline = false;
 
   function createApolloClient() {
     const wslink = new WebSocketLink({
-      uri: 'wss://todoweblabs.herokuapp.com/v1/graphql',
+      uri: domainenv,
       options: {
         reconnect: true,
       },
@@ -60,25 +61,26 @@
       loaderEnabled = false;
       return;
     }
-    if (!deadlineValue) {
-      await request
-        .startExecuteMyMutation(
+    try {
+      if (!deadlineValue) {
+        await request.startExecuteMyMutation(
           Operations.mutationInsertWithoutDeadline(titleValue, bodyValue),
-        )
-        .catch((e) => openModal(e), (loaderEnabled = false));
-    } else {
-      if (new Date(deadlineValue) < getTodaysDate()) {
-        openModal('Deadline can not be earlier than today');
-        loaderEnabled = false;
-        return;
-      }
-      await request
-        .startExecuteMyMutation(
+        );
+      } else {
+        if (new Date(deadlineValue) < getTodaysDate()) {
+          openModal('Deadline can not be earlier than today');
+          loaderEnabled = false;
+          return;
+        }
+        await request.startExecuteMyMutation(
           Operations.mutationInsert(titleValue, bodyValue, deadlineValue),
-        )
-        .catch((e) => openModal(e), (loaderEnabled = false));
+        );
+      }
+      loaderEnabled = false;
+    } catch (e) {
+      openModal(e);
+      loaderEnabled = false;
     }
-    loaderEnabled = false;
   };
 
   const deleteTask = async (id) => {
@@ -96,16 +98,21 @@
       .catch((e) => openModal(e), (loaderEnabled = false));
     loaderEnabled = false;
   };
+
   const openModal = (text) => {
-    modalText = text;
+    modalText.set(text);
   };
 
   const closeModal = () => {
-    modalText = '';
+    modalText.set('');
   };
 
   window.onoffline = () => {
+    offline = true;
     openModal('You are currently offline!');
+  };
+  window.ononline = () => {
+    offline = false;
   };
 </script>
 
@@ -115,15 +122,17 @@
       <div class="loader" />
     {:else if $Tasks.error}
       <h1 class="message">error</h1>
+    {:else if offline}
+      <h1 class="message">Check your internet connection</h1>
     {:else if $Tasks.data}
       {#if loaderEnabled}
         <div class="loader" />
       {/if}
-      {#if modalText}
+      {#if $modalText}
         <div class="modal-container">
           <div class="modal">
             <h1>Error</h1>
-            <p>{modalText}</p>
+            <p>{$modalText}</p>
             <button class="modal_button" id="close" on:click={closeModal}>
               Close
             </button>

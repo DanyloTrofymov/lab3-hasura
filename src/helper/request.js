@@ -1,14 +1,24 @@
+import { modalText } from '../store';
+
 class Request {
+  // eslint-disable-next-line
   async fetchGraphQL(operationsDoc, operationName, variables) {
-    const result = await fetch('https://todoweblabs.herokuapp.com/v1/graphql', {
-      method: 'POST',
-      body: JSON.stringify({
-        query: operationsDoc,
-        variables,
-        operationName,
-      }),
-    });
-    return await result.json(); // eslint-disable-line
+    try {
+      const result = await fetch(
+        'https://todoweblabs.herokuapp.com/v1/graphql',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            query: operationsDoc,
+            variables,
+            operationName,
+          }),
+        },
+      );
+      return await result.json(); // eslint-disable-line
+    } catch (e) {
+      modalText.set(e.message);
+    }
   }
   fetchMyQuery(operationsDoc) {
     return this.fetchGraphQL(operationsDoc, 'MyQuery', {});
@@ -18,11 +28,10 @@ class Request {
     const { errors, data } = await this.fetchMyQuery(operationsDoc);
 
     if (errors) {
-      // handle those errors like a pro
       console.error(errors);
+      throw new Error(errors[0].message);
     }
 
-    // do something great with this precious data
     console.log(data);
     return data;
   }
@@ -34,11 +43,9 @@ class Request {
     const { errors, data } = await this.executeMyMutation(operationsDoc);
 
     if (errors) {
-      // handle those errors like a pro
       console.error(errors);
+      throw new Error(errors[0].message);
     }
-
-    // do something great with this precious data
     console.log(data);
     return data;
   }
